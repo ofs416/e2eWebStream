@@ -72,6 +72,7 @@ services:
   webserver:
     build: .
     container_name: webserver
+    command: webserver
     depends_on:
       - postgres
     networks:
@@ -79,12 +80,13 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./dags:/opt/airflow/dags
+      - ./dags/:/opt/airflow/dags/
       - ./requirements.txt:/opt/airflow/requirements.txt
     environment:
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - LOAD_EX=n
+      - EXECUTOR=Sequential
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
     healthcheck:
       test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
       interval: 30s
@@ -99,12 +101,13 @@ services:
     networks:
       - kafka_network
     volumes:
-      - ./dags:/opt/airflow/dags
+      - ./dags/:/opt/airflow/dags/
       - ./requirements.txt:/opt/airflow/requirements.txt
     environment:
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - LOAD_EX=n
+      - EXECUTOR=Sequential
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+      - AIRFLOW_WEBSERVER_SECRET_KEY=this_is_a_very_secured_key
     command: scheduler
     healthcheck:
       test: ["CMD-SHELL", "airflow healthcheck"]

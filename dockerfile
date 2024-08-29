@@ -20,8 +20,16 @@ ADD requirements.txt .
 # Install the required Python packages
 RUN pip install -r requirements.txt 
 
-# Initialize the Airflow database
-RUN airflow db init
+# Set environment variables for Airflow user creation
+ENV AIRFLOW_USER=admin
+ENV AIRFLOW_PASSWORD=admin
+ENV AIRFLOW_FIRSTNAME=Admin
+ENV AIRFLOW_LASTNAME=User
+ENV AIRFLOW_ROLE=Admin
+ENV AIRFLOW_EMAIL=admin@example.com
 
-# Set the entrypoint to ensure the database is initialized before starting the scheduler
-ENTRYPOINT ["bash", "-c", "airflow db init && exec airflow webserver"]
+# Copy the entrypoint script
+COPY --chmod=755 entrypoint.sh /entrypoint.sh
+
+# Set the entrypoint to the script
+ENTRYPOINT ["/entrypoint.sh"]
