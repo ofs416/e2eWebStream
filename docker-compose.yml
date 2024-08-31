@@ -1,7 +1,9 @@
 services:
 
   kafka:
-    image: bitnami/kafka:3.5.1
+    build: 
+      context: .
+      target: kafka
     container_name: kafka
     networks:
       - kafka_network
@@ -27,8 +29,12 @@ services:
       timeout: 10s
 
   spark-master:
-    build: .
-    command: bin/spark-class org.apache.spark.deploy.master.Master
+    build: 
+      context: .
+      target: spark
+    container_name: spark-master
+    volumes:
+      - ./requirements/kafka.txt:/opt/bitnami/spark/requirements.txt
     networks:
       - kafka_network
     ports:
@@ -36,8 +42,12 @@ services:
       - "7077:7077"
 
   spark-worker:
-    build: .
-    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    build: 
+      context: .
+      target: spark
+    container_name: spark-worker
+    volumes:
+      - ./requirements/spark.txt:/opt/bitnami/spark/requirements.txt
     depends_on:
       - spark-master
     networks:
@@ -49,7 +59,9 @@ services:
       SPARK_MASTER_URL: spark://spark-master:7077
 
   webserver:
-    build: .
+    build: 
+      context: .
+      target: airflow
     container_name: webserver
     command: webserver
     depends_on:
@@ -61,8 +73,8 @@ services:
     volumes:
       - ./dags/:/opt/airflow/dags/
       - ./tests/:/opt/airflow/tests/
-      - ./script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
-      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./scripts/entrypoint.sh:/opt/airflow/scripts/entrypoint.sh
+      - ./requirements/airflow.txt:/opt/airflow/requirements.txt
     env_file:
       - .env
     healthcheck:
@@ -72,7 +84,9 @@ services:
       retries: 5
 
   scheduler:
-    build: .
+    build: 
+      context: .
+      target: airflow
     container_name: scheduler
     depends_on:
       webserver:
@@ -82,8 +96,8 @@ services:
     volumes:
       - ./dags/:/opt/airflow/dags/
       - ./tests/:/opt/airflow/tests/
-      - ./script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
-      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./scripts/entrypoint.sh:/opt/airflow/scripts/entrypoint.sh
+      - ./requirements/airflow.txt:/opt/airflow/requirements.txt
     env_file:
       - .env
     command: scheduler
@@ -94,7 +108,9 @@ services:
       retries: 5
 
   postgres:
-    image: postgres:14.0
+    build: 
+      context: .
+      target: postgres
     container_name: postgres
     networks:
       - kafka_network

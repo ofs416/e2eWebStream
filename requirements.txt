@@ -1,3 +1,0 @@
-apache-airflow
-kafka-python
-confluent-kafka
