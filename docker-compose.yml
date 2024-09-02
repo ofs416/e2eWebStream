@@ -27,6 +27,21 @@ services:
       test: ["CMD", "kafka-topics.sh", "--bootstrap-server", "localhost:9092", "--list"]
       interval: 30s
       timeout: 10s
+    
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.7.0
+    depends_on:
+      - kafka
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: kafka:9092
+      CONTROL_CENTER_KAFKA_CLUSTER_ID: <KAFKA_CLUSTER_ID>
+      CONTROL_CENTER_CONNECT_CLUSTER: connect:8083
+      CONTROL_CENTER_KSQL_URL: http://ksql-server:8088
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+    networks:
+      - kafka_network
 
   spark-master:
     build: 
@@ -34,7 +49,7 @@ services:
       target: spark
     container_name: spark-master
     volumes:
-      - ./requirements/kafka.txt:/opt/bitnami/spark/requirements.txt
+      - ./apps/:/opt/bitnami/spark/apps/
     networks:
       - kafka_network
     ports:
@@ -45,7 +60,6 @@ services:
     build: 
       context: .
       target: spark
-    container_name: spark-worker
     volumes:
       - ./requirements/spark.txt:/opt/bitnami/spark/requirements.txt
     depends_on:
@@ -55,7 +69,7 @@ services:
     environment:
       SPARK_MODE: worker
       SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 1g
+      SPARK_WORKER_MEMORY: 2g
       SPARK_MASTER_URL: spark://spark-master:7077
 
   webserver:
@@ -120,6 +134,20 @@ services:
       - POSTGRES_USER=airflow
       - POSTGRES_PASSWORD=airflow
       - POSTGRES_DB=airflow
+  
+  cassandra_db:
+    image: bitnami/cassandra:4.0.6
+    container_name: cassandra
+    hostname: cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=100M
+      - CASSANDRA_USERNAME=cassandra
+      - CASSANDRA_PASSWORD=cassandra
+    networks:
+      - kafka_network
 
 networks:
   kafka_network:
