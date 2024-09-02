@@ -1,6 +1,6 @@
 # Variables
 WORKER_COUNT ?= 3
-SPARK_PACKAGES = org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2
+SPARK_PACKAGES = 'org.apache.kafka:kafka-clients:3.7.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.apache.spark:spark-streaming-kafka-0-10_2.12:3.5.1,org.apache.spark:spark-token-provider-kafka-0-10_2.12:3.5.1'
 
 build:
 	docker compose build
@@ -21,7 +21,4 @@ stop:
 	docker compose stop
 
 submit:
-	docker exec spark-master spark-submit --packages $(SPARK_PACKAGES) --master spark://spark-master:7077 ./apps/$(app)
-
-rm-results:
-	rm -r book_data/results/*
+	docker exec spark-master spark-submit --packages $(SPARK_PACKAGES) --master spark://spark-master:7077 ./apps/spark_stream.py
