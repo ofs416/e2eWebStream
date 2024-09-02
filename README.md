@@ -1,6 +1,6 @@
 # Project: Learning about Apache Airflow, Apache Kafka, Apache Spark, and Docker
 
-This project focuses on deveeloping my knowledge and proficiency in Apache Airflow, Apache Kafka, Apache Spark, and Docker. These technologies play a key role in distributed cloud-based deployments and are widely utilized for orchestrating workflows, streaming data processing, and containerized application management.
+This project focuses on developing my knowledge and proficiency in Apache Airflow, Apache Kafka, Apache Spark, and Docker. These technologies play a key role in distributed cloud-based deployments and are widely utilized for orchestrating workflows, streaming data processing, and containerized application management.
 
 ## Apache Airflow
 Apache Airflow is an open-source platform used for orchestrating and scheduling complex workflows. It allows you to define, manage, and monitor workflows as directed acyclic graphs (DAGs). With Airflow, you can easily schedule and execute tasks, making it ideal for data pipelines, ETL processes, and workflow automation.
