@@ -1,5 +1,5 @@
 # Define the Bitnami Spark version as an argument
-ARG BITNAMI_SPARK_VERSION=3.5.1
+ARG BITNAMI_SPARK_VERSION=3.5.0
 # Define the Apache Airflow version as an argument
 ARG AIRFLOW_VERSION=2.10.0
 # Define the Kafka version as an argument
@@ -37,7 +37,9 @@ RUN SCALA_VERSION=$(/opt/bitnami/spark/bin/spark-submit --version 2>&1 | grep -o
     wget -q -O /opt/bitnami/spark/jars/spark-sql-kafka-0-10_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_${SCALA_VERSION}/${BITNAMI_SPARK_VERSION}/spark-sql-kafka-0-10_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar && \
     wget -q -O /opt/bitnami/spark/jars/spark-streaming-kafka-0-10_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar https://repo1.maven.org/maven2/org/apache/spark/spark-streaming-kafka-0-10_${SCALA_VERSION}/${BITNAMI_SPARK_VERSION}/spark-streaming-kafka-0-10_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar && \
     wget -q -O /opt/bitnami/spark/jars/spark-token-provider-kafka-0-10_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_${SCALA_VERSION}/${BITNAMI_SPARK_VERSION}/spark-token-provider-kafka-0-10_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar && \
-    wget -q -O /opt/bitnami/spark/jars/commons-pool2-2.11.1.jar https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.jar
+    wget -q -O /opt/bitnami/spark/jars/commons-pool2-2.11.1.jar https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/2.11.1/commons-pool2-2.11.1.jar && \
+    wget -q -O /opt/bitnami/spark/jars/spark-cassandra-connector_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar https://repo1.maven.org/maven2/com/datastax/spark/spark-cassandra-connector_${SCALA_VERSION}/${BITNAMI_SPARK_VERSION}/spark-cassandra-connector_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar && \
+    wget -q -O /opt/bitnami/spark/jars/spark-cassandra-connector-assembly_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar https://repo1.maven.org/maven2/com/datastax/spark/spark-cassandra-connector-assembly_${SCALA_VERSION}/${BITNAMI_SPARK_VERSION}/spark-cassandra-connector-assembly_${SCALA_VERSION}-${BITNAMI_SPARK_VERSION}.jar
 
 # --------------------------------------------------------------------- #
 

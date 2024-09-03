@@ -29,7 +29,7 @@ services:
       timeout: 10s
     
   control-center:
-    image: confluentinc/cp-enterprise-control-center:7.7.0
+    image: confluentinc/cp-enterprise-control-center:latest
     depends_on:
       - kafka
     ports:
@@ -48,6 +48,8 @@ services:
       context: .
       target: spark
     container_name: spark-master
+    depends_on:
+      - cassandra
     volumes:
       - ./apps/:/opt/bitnami/spark/apps/
     networks:
@@ -135,19 +137,18 @@ services:
       - POSTGRES_PASSWORD=airflow
       - POSTGRES_DB=airflow
   
-  cassandra_db:
-    image: bitnami/cassandra:4.0.6
+  cassandra:
+    image: cassandra:latest
     container_name: cassandra
-    hostname: cassandra
+    networks:
+      - kafka_network
     ports:
       - "9042:9042"
     environment:
-      - MAX_HEAP_SIZE=512M
-      - HEAP_NEWSIZE=100M
-      - CASSANDRA_USERNAME=cassandra
-      - CASSANDRA_PASSWORD=cassandra
-    networks:
-      - kafka_network
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_NUM_TOKENS=256
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
 
 networks:
   kafka_network:

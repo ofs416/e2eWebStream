@@ -20,6 +20,7 @@ def format_data(response):
     """Formats the data."""
     data = {}
     location = response["location"]
+    data["id"] = response["login"]["uuid"]
     data["firstname"] = response["name"]["first"]
     data["lastname"] = response["name"]["last"]
     data["gender"] = response["gender"]
@@ -38,7 +39,7 @@ def format_data(response):
 def stream_data():
     """Streams data from the free open-source random user generator."""
 
-    producer = KafkaProducer(bootstrap_servers=['kafka:9092'], max_block_ms=5000) #localhost:9092
+    producer = KafkaProducer(bootstrap_servers=['kafka:9092'], max_block_ms=5000)
     curr_time = time.time()
 
     while True:
