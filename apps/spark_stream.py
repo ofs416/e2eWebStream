@@ -66,11 +66,6 @@ if __name__ == "__main__":
     spark_conn = (SparkSession.builder
                     .master("spark://spark-master:7077")
                     .appName('SparkDataStreaming')
-                    .config('spark.jars.packages', 'org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,\
-                            org.apache.spark:spark-streaming-kafka-0-10_2.12:3.5.0,\
-                            org.apache.spark:spark-token-provider-kafka-0-10_2.12:3.5.0,\
-                            com.datastax.spark:spark-cassandra-connector_2.12:3.5.0,\
-                            com.datastax.spark:spark-cassandra-connector-assembly_2.12:3.5.0')
                     .config('spark.cassandra.connection.port', '9042')
                     .config('spark.cassandra.connection.host', 'cassandra')
                     .getOrCreate())
