@@ -175,6 +175,11 @@ services:
       - CASSANDRA_NUM_TOKENS=256
       - CASSANDRA_DC=datacenter1
       - CASSANDRA_RACK=rack1
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+volumes:
+  cassandra_data:
 
 networks:
   kafka_network:
