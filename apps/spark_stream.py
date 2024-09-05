@@ -33,33 +33,10 @@ def create_table(session):
     print("Table created successfully.")
 
 
-def insert_data(session, **kwargs):
-    print("inserting data...")
-
-    userid = kwargs.get('id')
-    firstname = kwargs.get('firstname')
-    lastname = kwargs.get('lastname')
-    gender = kwargs.get('gender')
-    address = kwargs.get('address')
-    postcode = kwargs.get('postcode')
-    email = kwargs.get('email')
-    username = kwargs.get('username')
-    dob = kwargs.get('dob')
-    registrationdate = kwargs.get('registrationdate')
-    phone = kwargs.get('phone')
-    picture = kwargs.get('picture')
-
-    session.execute("""
-            INSERT INTO sparkstreams.createdusers(id, firstname, lastname, gender, address, 
-            postcode, email, username, dob, registrationdate, phone, picture)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """, (userid, firstname, lastname, gender, address,
-          postcode, email, username, dob, registrationdate, phone, picture))
-    logging.info(f"Data inserted for {firstname} {lastname}")
-
-
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+
+    # Set up logging
+    logging.getLogger().setLevel(logging.WARNING)
 
     # create spark connection
     # noinspection PyInterpreter
@@ -138,6 +115,4 @@ if __name__ == "__main__":
                         .option('keyspace', 'sparkstreams')
                         .option('table', 'createdusers')
                         .start())
-    
     streaming_query.awaitTermination()
-

@@ -42,6 +42,32 @@ services:
       CONTROL_CENTER_REPLICATION_FACTOR: 1
     networks:
       - kafka_network
+    
+
+  init-kafka:
+    build: 
+      context: .
+      target: kafka
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      until /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list; do
+        echo 'Waiting for Kafka broker to be ready...'
+        sleep 5
+      done
+
+      echo -e 'Creating kafka topics'
+      /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic usercreated --replication-factor 1 --partitions 1
+
+      echo -e 'Successfully created the following topics:'
+      /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+      "
+    networks:
+      - kafka_network
 
   spark-master:
     build: 
