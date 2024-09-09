@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{if .user.ID}}Edit User{{else}}Add User{{end}}</title>
+</head>
+<body>
+    <h1>{{if .user.ID}}Edit User{{else}}Add User{{end}}</h1>
+    <form action="{{if .user.ID}}/user/{{.user.ID}}{{else}}/user/new{{end}}" method="POST">
+        <p>First Name: <input type="text" name="firstname" value="{{.user.FirstName}}"></p>
+        <p>Last Name: <input type="text" name="lastname" value="{{.user.LastName}}"></p>
+        <p>Gender: <input type="text" name="gender" value="{{.user.Gender}}"></p>
+        <p>Address: <input type="text" name="address" value="{{.user.Address}}"></p>
+        <p>Postcode: <input type="text" name="postcode" value="{{.user.Postcode}}"></p>
+        <p>Email: <input type="text" name="email" value="{{.user.Email}}"></p>
+        <p>Username: <input type="text" name="username" value="{{.user.Username}}"></p>
+        <p>Registration Date: <input type="text" name="registrationdate" value="{{.user.RegistrationDate}}"></p>
+        <p>Phone: <input type="text" name="phone" value="{{.user.Phone}}"></p>
+        <p>Picture: <input type="text" name="picture" value="{{.user.Picture}}"></p>
+        <button type="submit">{{if .user.ID}}Update{{else}}Create{{end}}</button>
+    </form>
+    <a href="/">Back</a>
+</body>
+</html>

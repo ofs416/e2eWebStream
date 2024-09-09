@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Users</title>
+</head>
+<body>
+    <h1>Users</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Gender</th>
+            <th>Address</th>
+            <th>Postcode</th>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Registration Date</th>
+            <th>Phone</th>
+            <th>Picture</th>
+            <th>Actions</th>
+        </tr>
+        {{range .users}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td>{{.FirstName}}</td>
+            <td>{{.LastName}}</td>
+            <td>{{.Gender}}</td>
+            <td>{{.Address}}</td>
+            <td>{{.Postcode}}</td>
+            <td>{{.Email}}</td>
+            <td>{{.Username}}</td>
+            <td>{{.RegistrationDate}}</td>
+            <td>{{.Phone}}</td>
+            <td><img src="{{.Picture}}" alt="User Picture" width="50"></td>
+            <td>
+                <a href="/user/{{.ID}}">Edit</a>
+                <form action="/user/{{.ID}}/delete" method="POST" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {{end}}
+    </table>
+    <a href="/user/new">Add New User</a>
+</body>
+</html>
