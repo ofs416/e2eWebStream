@@ -175,8 +175,21 @@ services:
       - CASSANDRA_NUM_TOKENS=256
       - CASSANDRA_DC=datacenter1
       - CASSANDRA_RACK=rack1
+      - CASSANDRA_START_RPC=true
     volumes:
       - cassandra_data:/var/lib/cassandra
+
+  go_cassandra_app:
+    build:
+      context: .
+      target: golang
+    container_name: go_cassandra_app
+    networks:
+      - kafka_network
+    ports:
+      - "8081:8081"
+    depends_on:
+      - cassandra
 
 volumes:
   cassandra_data:

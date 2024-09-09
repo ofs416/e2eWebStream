@@ -62,3 +62,21 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 # Use the official PostgreSQL image with the specified version
 FROM postgres:${POSTGRES_VERSION} AS postgres
+
+# --------------------------------------------------------------------- #
+
+# Use the official Golang image as the base image
+FROM golang:1.23 AS golang
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the Go application source code to the container
+COPY apps/go_cassandra_app .
+RUN go mod download
+
+# Expose the port the application runs on
+EXPOSE 8081
+
+# Command to run the Go application
+CMD ["go", "run", "main.go"]
