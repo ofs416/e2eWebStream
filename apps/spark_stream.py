@@ -34,10 +34,6 @@ def create_table(session):
 
 
 if __name__ == "__main__":
-
-    # Set up logging
-    logging.getLogger().setLevel(logging.WARNING)
-
     # create spark connection
     # noinspection PyInterpreter
     spark_conn = (SparkSession.builder
@@ -46,6 +42,9 @@ if __name__ == "__main__":
                     .config('spark.cassandra.connection.port', '9042')
                     .config('spark.cassandra.connection.host', 'cassandra')
                     .getOrCreate())
+    
+    # Set up logging
+    spark_conn.sparkContext.setLogLevel("WARN")
     
     logging.info("Spark connection created successfully!")
 
