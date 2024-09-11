@@ -15,11 +15,9 @@ def update_model(batch_df, batch_id):
 # Function to make predictions using the current model
 def make_predictions(batch_df, batch_id):
     global global_model
-    if global_model is not None:
-        predictions = global_model.transform(batch_df)
-        filled_df = predictions.withColumn("prediction", when(col("gender").isNull(), col("prediction")).otherwise(col("gender")))
-        return filled_df
-    return batch_df
+    predictions = global_model.transform(batch_df)
+    filled_df = predictions.withColumn("prediction", when(col("gender").isNull(), col("prediction")).otherwise(col("gender")))
+    return filled_df
 
 # Function to process each batch
 def process_batch(batch_df, batch_id):
@@ -32,6 +30,9 @@ def process_batch(batch_df, batch_id):
     split_data = remaining_data.randomSplit([0.1, 0.9], seed=42)
     validation_data = split_data[0]
     training_data = split_data[1]
+
+    # Update the model with training data
+    update_model(training_data, batch_id)
     
     # Make predictions on unlabeled data
     updated_unlabeled_data = make_predictions(unlabeled_data, batch_id)
@@ -40,16 +41,12 @@ def process_batch(batch_df, batch_id):
     selection_df = selection_df.union(updated_unlabeled_data)
     
     # Check current error on validation data
-    if global_model is not None:
-        validation_predictions = global_model.transform(validation_data)
-        evaluator = MulticlassClassificationEvaluator(labelCol="genderIndex", predictionCol="prediction", metricName="accuracy")
-        accuracy = evaluator.evaluate(validation_predictions)
-        print(f"Batch {batch_id}: Validation Accuracy = {accuracy}")
-    
-    # Update the model with training data
-    update_model(training_data, batch_id)
-    
+    validation_predictions = global_model.transform(validation_data)
+    evaluator = MulticlassClassificationEvaluator(labelCol="genderIndex", predictionCol="prediction", metricName="accuracy")
+    accuracy = evaluator.evaluate(validation_predictions)
+    print(f"Batch {batch_id}: Validation Accuracy = {accuracy}")
 
+    
 if __name__ == "__main__":
     # Define schema for the data
     schema = StructType([
