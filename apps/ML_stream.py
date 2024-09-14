@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col, when, rand
+from pyspark.sql.functions import from_json, col, when, rand, split
 from pyspark.sql.types import StructType, StructField, StringType
 from pyspark.ml.feature import StringIndexer, VectorAssembler
 from pyspark.ml.classification import LogisticRegression
@@ -17,15 +17,15 @@ def update_model(batch_df, batch_id):
 def make_predictions(batch_df, batch_id):
     global global_model
     predictions = global_model.transform(batch_df)
-    filled_df = predictions.withColumn("prediction", when(col("gender").isNull(), col("prediction")).otherwise(col("gender")))
-    return filled_df
+    selection_df = predictions.withColumn("prediction", when(col("gender").isNull(), col("prediction")))
 
 # Function to process each batch
 def process_batch(batch_df, batch_id):
-    global selection_df
+    print(f"Processing batch {batch_id}")
+
     # Partition 1: Unlabeled data missing the gender
     unlabeled_data = batch_df.filter(col("gender").isNull())
-    
+
     # Partition 2 and 3: Split remaining data
     remaining_data = batch_df.filter(col("gender").isNotNull())
     split_data = remaining_data.randomSplit([0.1, 0.9], seed=42)
@@ -33,14 +33,18 @@ def process_batch(batch_df, batch_id):
     training_data = split_data[1]
 
     # Update the model with training data
-    update_model(training_data, batch_id)
-    
+    global_model = pipeline.fit(training_data)
+
     # Make predictions on unlabeled data
-    updated_unlabeled_data = make_predictions(unlabeled_data, batch_id)
-    
-    # Update selection_df with predictions
-    selection_df = selection_df.union(updated_unlabeled_data)
-    
+    predictions = global_model.transform(unlabeled_data)
+    updated_unlabeled_data = predictions.withColumn("gender", when(col("gender").isNull(), col("prediction")))
+
+    # Combine the updated unlabeled data with the remaining data
+    result_df = remaining_data.unionByName(updated_unlabeled_data.select(remaining_data.columns))
+
+    # Optionally, you can assign the result_df back to batch_df if needed
+    batch_df = result_df
+
     # Check current error on validation data
     validation_predictions = global_model.transform(validation_data)
     evaluator = MulticlassClassificationEvaluator(labelCol="genderIndex", predictionCol="prediction", metricName="accuracy")
@@ -55,7 +59,6 @@ if __name__ == "__main__":
         StructField("firstname", StringType(), False),
         StructField("lastname", StringType(), False),
         StructField("gender", StringType(), False),
-        StructField("prediction", StringType(), False),
         StructField("address", StringType(), False),
         StructField("postcode", StringType(), False),
         StructField("email", StringType(), False),
@@ -101,6 +104,9 @@ if __name__ == "__main__":
     word2vec_firstname = Word2Vec(inputCol="firstname_tokens", outputCol="firstnameVec", vectorSize=10, minCount=0)
     word2vec_username = Word2Vec(inputCol="username_tokens", outputCol="usernameVec", vectorSize=10, minCount=0)
 
+    # Index the gender column
+    gender_indexer = StringIndexer(inputCol="gender", outputCol="genderIndex")
+
     # Combine the vectors into a single feature vector
     assembler = VectorAssembler(inputCols=["firstnameVec", "usernameVec"], outputCol="features")
 
@@ -108,7 +114,7 @@ if __name__ == "__main__":
     lr = LogisticRegression(featuresCol="features", labelCol="genderIndex")
 
     # Create a pipeline with the stages
-    pipeline = Pipeline(stages=[word2vec_firstname, word2vec_username, assembler, lr])
+    pipeline = Pipeline(stages=[word2vec_firstname, word2vec_username, gender_indexer, assembler, lr])
 
     # Initialize a global variable for the model
     global_model = None
@@ -116,7 +122,7 @@ if __name__ == "__main__":
     # Apply the model to predict missing values and update the model with new data
     query = selection_df.writeStream \
         .outputMode("append") \
-        .trigger(processingTime='10 seconds') \
+        .trigger(processingTime='20 seconds') \
         .foreachBatch(process_batch) \
         .format("console") \
         .start()
