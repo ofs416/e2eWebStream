@@ -7,6 +7,7 @@ type User struct {
 	FirstName        string     `form:"firstname"`
 	LastName         string     `form:"lastname"`
 	Gender           string     `form:"gender"`
+	Prediction       string     `form:"prediction"`
 	Address          string     `form:"address"`
 	Postcode         string     `form:"postcode"`
 	Email            string     `form:"email"`
