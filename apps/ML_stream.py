@@ -8,17 +8,6 @@ from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml.feature import Word2Vec
 
 
-# Function to update the model with new data
-def update_model(batch_df, batch_id):
-    global global_model
-    global_model = pipeline.fit(batch_df)
-
-# Function to make predictions using the current model
-def make_predictions(batch_df, batch_id):
-    global global_model
-    predictions = global_model.transform(batch_df)
-    selection_df = predictions.withColumn("prediction", when(col("gender").isNull(), col("prediction")))
-
 # Function to process each batch
 def process_batch(batch_df, batch_id):
     print(f"Processing batch {batch_id}")
@@ -28,7 +17,7 @@ def process_batch(batch_df, batch_id):
 
     # Partition 2 and 3: Split remaining data
     remaining_data = batch_df.filter(col("gender").isNotNull())
-    split_data = remaining_data.randomSplit([0.1, 0.9], seed=42)
+    split_data = remaining_data.randomSplit([0.15, 0.85], seed=42)
     validation_data = split_data[0]
     training_data = split_data[1]
 
@@ -47,6 +36,12 @@ def process_batch(batch_df, batch_id):
 
     # Check current error on validation data
     validation_predictions = global_model.transform(validation_data)
+
+
+    validation_data.show()
+    # Display the selected columns
+    validation_predictions.show()
+
     evaluator = MulticlassClassificationEvaluator(labelCol="genderIndex", predictionCol="prediction", metricName="accuracy")
     accuracy = evaluator.evaluate(validation_predictions)
     print(f"Batch {batch_id}: Validation Accuracy = {accuracy}")
@@ -98,23 +93,21 @@ if __name__ == "__main__":
 
     # Tokenize the text data
     selection_df = selection_df.withColumn("firstname_tokens", split(col("firstname"), ""))
-    selection_df = selection_df.withColumn("username_tokens", split(col("username"), ""))
 
     # Apply Word2Vec to convert tokens into vectors
-    word2vec_firstname = Word2Vec(inputCol="firstname_tokens", outputCol="firstnameVec", vectorSize=10, minCount=0)
-    word2vec_username = Word2Vec(inputCol="username_tokens", outputCol="usernameVec", vectorSize=10, minCount=0)
+    word2vec_firstname = Word2Vec(inputCol="firstname_tokens", outputCol="firstnameVec", vectorSize=100, minCount=0)
 
     # Index the gender column
     gender_indexer = StringIndexer(inputCol="gender", outputCol="genderIndex")
 
     # Combine the vectors into a single feature vector
-    assembler = VectorAssembler(inputCols=["firstnameVec", "usernameVec"], outputCol="features")
+    # assembler = VectorAssembler(inputCols=["firstnameVec"], outputCol="features")
 
     # Define the logistic regression model
-    lr = LogisticRegression(featuresCol="features", labelCol="genderIndex")
+    lr = LogisticRegression(featuresCol="firstnameVec", labelCol="genderIndex")
 
     # Create a pipeline with the stages
-    pipeline = Pipeline(stages=[word2vec_firstname, word2vec_username, gender_indexer, assembler, lr])
+    pipeline = Pipeline(stages=[word2vec_firstname, gender_indexer, lr])
 
     # Initialize a global variable for the model
     global_model = None
@@ -124,7 +117,6 @@ if __name__ == "__main__":
         .outputMode("append") \
         .trigger(processingTime='20 seconds') \
         .foreachBatch(process_batch) \
-        .format("console") \
         .start()
 
     query.awaitTermination()
