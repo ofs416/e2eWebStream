@@ -5,6 +5,7 @@ from pyspark.ml.feature import StringIndexer, VectorAssembler
 from pyspark.ml.classification import LogisticRegression
 from pyspark.ml import Pipeline, PipelineModel
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+from pyspark.ml.feature import Word2Vec
 
 
 # Function to update the model with new data
@@ -92,17 +93,22 @@ if __name__ == "__main__":
 
     selection_df.printSchema()
 
-    # Preprocess data
-    gender_indexer = StringIndexer(inputCol="gender", outputCol="genderIndex")
-    firstname_indexer = StringIndexer(inputCol="firstname", outputCol="firstnameIndex")
-    username_indexer = StringIndexer(inputCol="username", outputCol="usernameIndex")
-    assembler = VectorAssembler(inputCols=["firstnameIndex", "usernameIndex"], outputCol="features")
+    # Tokenize the text data
+    selection_df = selection_df.withColumn("firstname_tokens", split(col("firstname"), ""))
+    selection_df = selection_df.withColumn("username_tokens", split(col("username"), ""))
 
-    # Define the model
+    # Apply Word2Vec to convert tokens into vectors
+    word2vec_firstname = Word2Vec(inputCol="firstname_tokens", outputCol="firstnameVec", vectorSize=10, minCount=0)
+    word2vec_username = Word2Vec(inputCol="username_tokens", outputCol="usernameVec", vectorSize=10, minCount=0)
+
+    # Combine the vectors into a single feature vector
+    assembler = VectorAssembler(inputCols=["firstnameVec", "usernameVec"], outputCol="features")
+
+    # Define the logistic regression model
     lr = LogisticRegression(featuresCol="features", labelCol="genderIndex")
 
-    # Create a pipeline
-    pipeline = Pipeline(stages=[gender_indexer, firstname_indexer, username_indexer, assembler, lr])
+    # Create a pipeline with the stages
+    pipeline = Pipeline(stages=[word2vec_firstname, word2vec_username, assembler, lr])
 
     # Initialize a global variable for the model
     global_model = None
