@@ -1,2 +1,7 @@
 cassandra-driver
 numpy
+gensim
+tensorflow
+numpy
+Pillow
+matplotlib
