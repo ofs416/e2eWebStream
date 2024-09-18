@@ -98,19 +98,11 @@ if __name__ == "__main__":
     # Start the stream
     logging.info("Starting stream...")
 
-    # Write the data to the console
-    # (selection_df.writeStream 
-    # .trigger(processingTime="10 seconds")
-    # .outputMode("append") 
-    # .format("console") 
-    # .start()    
-    # .awaitTermination())
-
     # Write the data to the cassandra table
     streaming_query = (selection_df
                         .writeStream
                         .format("org.apache.spark.sql.cassandra")
-                        .option('checkpointLocation', '/tmp/checkpoint')
+                        .option('checkpointLocation', '/tmp/checkpoint1')
                         .option('keyspace', 'sparkstreams')
                         .option('table', 'createdusers')
                         .start())
