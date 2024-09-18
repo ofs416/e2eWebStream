@@ -98,8 +98,8 @@ services:
       - kafka_network
     environment:
       SPARK_MODE: worker
-      SPARK_WORKER_CORES: 2
-      SPARK_WORKER_MEMORY: 2g
+      SPARK_WORKER_CORES: 3
+      SPARK_WORKER_MEMORY: 4g
       SPARK_MASTER_URL: spark://spark-master:7077
 
   webserver:
