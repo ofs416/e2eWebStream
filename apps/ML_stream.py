@@ -8,7 +8,7 @@ from pyspark.sql.functions import from_json, col, udf
 from pyspark.sql.types import StructType, StructField, StringType
 
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input, decode_predictions
+from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
 
 import numpy as np
 
@@ -34,7 +34,7 @@ predict_gender_udf = udf(predict_gender, StringType())
 if __name__ == "__main__":
 
     # Load pre-trained model
-    model = ResNet50(weights='imagenet')
+    model = MobileNetV2(weights='imagenet')
 
     # Define schema for the data
     schema = StructType([
@@ -60,7 +60,7 @@ if __name__ == "__main__":
                 .format('kafka')
                 .option('kafka.bootstrap.servers', 'kafka:9092')
                 .option('subscribe', 'usercreated')
-                .option('startingOffsets', 'earliest')
+                .option('startingOffsets', 'latest')
                 .load())
     
 
@@ -76,7 +76,9 @@ if __name__ == "__main__":
     query = df.writeStream \
         .outputMode("append") \
         .trigger(processingTime="5 seconds") \
+        .option("checkpointLocation", "/tmp/checkpoints") \
         .format("console") \
         .start()
 
     query.awaitTermination()
+    spark.stop()
