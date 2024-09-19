@@ -7,8 +7,9 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import from_json, col, udf
 from pyspark.sql.types import StructType, StructField, StringType
 
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
+from tensorflow import keras
+from keras.preprocessing import image
+from keras.applications.mobilenet_v2 import preprocess_input
 
 import numpy as np
 
@@ -21,9 +22,8 @@ def predict_gender(image_url):
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
         img_array = preprocess_input(img_array)
-        predictions = model.predict(img_array)
-        decoded_predictions = decode_predictions(predictions, top=1)[0]
-        return decoded_predictions[0][1]
+        prediction = model.predict(img_array)
+        return prediction
     except Exception as e:
         return str(e)
     
@@ -34,7 +34,7 @@ predict_gender_udf = udf(predict_gender, StringType())
 if __name__ == "__main__":
 
     # Load pre-trained model
-    model = MobileNetV2(weights='imagenet')
+    model = keras.models.load_model('Models/gender_classification_model.keras')
 
     # Define schema for the data
     schema = StructType([

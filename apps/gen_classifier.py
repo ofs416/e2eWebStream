@@ -1,11 +1,11 @@
 from pyspark.sql import SparkSession
 
 import tensorflow as tf
-from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
+from tensorflow.keras import layers
 
 from cassandra.cluster import Cluster
 import numpy as np
@@ -23,50 +23,76 @@ cluster = Cluster(['cassandra'])
 session = cluster.connect('sparkstreams')
 
 # Query to fetch data
-query = "SELECT picture, gender FROM createdusers"
+query = "SELECT picture, gender FROM createdusers LIMIT 150"
 rows = session.execute(query)
 
 # Preprocess the data
-def preprocess_image(image_url):
+
+def fetch_image(image_url):
     response = requests.get(image_url)
     img = Image.open(BytesIO(response.content))  # Use PIL to open the image
     # Convert grayscale to RGB
     if img.mode != 'RGB':
         img = img.convert('RGB')
-    print(f"raw size: {img.size}")
     img = img.resize((224, 224))  # Resize the image to the required size
-    print(f"Image resize: {img.size}")
     img_array = image.img_to_array(img)
-    print(f"Image array: {img_array.shape}")
-    img_array = np.expand_dims(img_array, axis=0)
-    print(f"Image expand: {img_array.shape}")
-    img_array = preprocess_input(img_array)
-    print(f"Image preprocess: {img_array.shape}")
-    print("-----------------")
     return img_array
+
+
+data_augmentation = tf.keras.Sequential([
+    layers.RandomFlip("horizontal_and_vertical"),
+    layers.RandomRotation(0.2),
+    layers.RandomZoom(0.1),
+])
 
 def preprocess_label(label):
     return 1 if label.lower() == 'male' else 0
+
 
 images = []
 labels = []
 
 for row in rows:
-    print(row.picture)
-    images.append(preprocess_image(row.picture))
+    images.append(fetch_image(row.picture))
     labels.append(preprocess_label(row.gender))
 
-images = np.array(images)
-labels = np.array(labels)
+# Convert lists to TensorFlow datasets
+image_dataset = tf.data.Dataset.from_tensor_slices(images)
+label_dataset = tf.data.Dataset.from_tensor_slices(labels)
+# Combine image and label datasets
+dataset = tf.data.Dataset.zip((image_dataset, label_dataset))
 
-# Split the data into training and validation sets
-split_index = int(0.8 * len(images))
-train_images, val_images = images[:split_index], images[split_index:]
-train_labels, val_labels = labels[:split_index], labels[split_index:]
+batch_size = 32
+AUTOTUNE = tf.data.AUTOTUNE
 
-# Create TensorFlow datasets
-train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels)).batch(32)
-val_dataset = tf.data.Dataset.from_tensor_slices((val_images, val_labels)).batch(32)
+def prepare(ds, shuffle=False, augment=False):
+    # Resize and rescale all datasets.
+    ds = ds.map(lambda x, y: (preprocess_input(x), y), num_parallel_calls=AUTOTUNE)
+
+    if shuffle:
+        ds = ds.shuffle(1000)  
+
+    # Batch all datasets.
+    ds = ds.batch(batch_size)
+
+    # Use data augmentation only on the training set.
+    if augment:
+        ds = ds.map(lambda x, y: (data_augmentation(x, training=True), y), 
+                    num_parallel_calls=AUTOTUNE)
+
+    # Use buffered prefetching on all datasets.
+    return ds.prefetch(buffer_size=AUTOTUNE)
+
+# Split the dataset into train and validation sets
+train_size = int(0.8 * len(dataset))
+val_size = len(dataset) - train_size
+
+train_dataset = dataset.take(train_size)
+val_dataset = dataset.skip(train_size)
+
+# Prepare the train and validation datasets
+train_dataset = prepare(train_dataset, shuffle=True, augment=True)
+val_dataset = prepare(val_dataset)
 
 # Load the MobileNetV2 model without the top layer
 base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
@@ -91,11 +117,13 @@ model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy']
 model.fit(
     train_dataset,
     validation_data=val_dataset,
-    epochs=10
+    epochs=40
 )
 
+model.summary()
+
 # Save the model
-model.save('gender_classification_model.h5')
+model.save('/opt/bitnami/spark/Models/gender_classification_model.keras')
 
 # Stop Spark session
 spark.stop()
