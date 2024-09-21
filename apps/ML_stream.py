@@ -22,8 +22,8 @@ def predict_gender(image_url):
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
         img_array = preprocess_input(img_array)
-        prediction = model.predict(img_array)
-        return prediction
+        prediction = model.predict(img_array)[0, 0]
+        return "male" if prediction >= 0.5 else "female"
     except Exception as e:
         return str(e)
     
@@ -60,7 +60,8 @@ if __name__ == "__main__":
                 .format('kafka')
                 .option('kafka.bootstrap.servers', 'kafka:9092')
                 .option('subscribe', 'usercreated')
-                .option('startingOffsets', 'latest')
+                .option('startingOffsets', 'earliest')
+                .option('failOnDataLoss', 'false')
                 .load())
     
 
@@ -68,6 +69,8 @@ if __name__ == "__main__":
     df = (df.selectExpr("CAST(value AS STRING)")
                 .select(from_json(col("value"), schema).alias("data"))
                 .select("data.*"))
+
+    
     
     # Apply UDF to the streaming DataFrame
     df = df.withColumn("predicted_gender", predict_gender_udf(df["picture"]))

@@ -78,7 +78,8 @@ services:
       - cassandra
     volumes:
       - ./apps/:/opt/bitnami/spark/apps/
-      - ./Models/:/opt/bitnami/spark/Models/
+      - ./Models:/opt/bitnami/spark/Models/
+      - ./tests/:/opt/bitnami/spark/tests/
     networks:
       - kafka_network
     ports:
@@ -195,6 +196,7 @@ services:
 
 volumes:
   cassandra_data:
+  Models:
 
 networks:
   kafka_network:
