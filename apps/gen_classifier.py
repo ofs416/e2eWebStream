@@ -9,6 +9,8 @@ from tensorflow.keras import layers
 
 import tf2onnx
 import onnx
+import onnxruntime
+from onnxruntime.transformers import optimizer
 
 from cassandra.cluster import Cluster
 import numpy as np
@@ -127,9 +129,12 @@ model.summary()
 
 # Convert the model to ONNX format
 onnx_model, _ = tf2onnx.convert.from_keras(model)
+onnx_model_path = '/opt/bitnami/spark/Models/gender_classification_model.onnx'
 
-# Save the ONNX model
-onnx.save(onnx_model, '/opt/bitnami/spark/Models/gender_classification_model.onnx')
+# Apply graph optimizations
+optimized_model = optimizer.optimize_model(onnx_model_path, model_type='bert')
+optimized_model_path = '/opt/bitnami/spark/Models/optimized_gender_classification_model.onnx'
+optimized_model.save_model_to_file(optimized_model_path)
 
 # Stop Spark session
 spark.stop()
