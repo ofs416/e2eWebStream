@@ -7,6 +7,9 @@ from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
 from tensorflow.keras import layers
 
+import tf2onnx
+import onnx
+
 from cassandra.cluster import Cluster
 import numpy as np
 import requests
@@ -122,8 +125,11 @@ model.fit(
 
 model.summary()
 
-# Save the model
-model.save('/opt/bitnami/spark/Models/gender_classification_model.keras')
+# Convert the model to ONNX format
+onnx_model, _ = tf2onnx.convert.from_keras(model)
+
+# Save the ONNX model
+onnx.save(onnx_model, '/opt/bitnami/spark/Models/gender_classification_model.onnx')
 
 # Stop Spark session
 spark.stop()
