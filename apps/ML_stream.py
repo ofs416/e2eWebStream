@@ -26,62 +26,66 @@ def predict_gender(image_url):
         return "male" if prediction >= 0.5 else "female"
     except Exception as e:
         return str(e)
-    
+
+
 # Register UDF
 predict_gender_udf = udf(predict_gender, StringType())
 
-    
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     # Load pre-trained model
-    model = keras.models.load_model('Models/gender_classification_model.keras')
+    model = keras.models.load_model("Models/gender_classification_model.keras")
 
     # Define schema for the data
-    schema = StructType([
-        StructField("id", StringType(), False),
-        StructField("firstname", StringType(), False),
-        StructField("lastname", StringType(), False),
-        StructField("gender", StringType(), False),
-        StructField("picture", StringType(), False)
-    ])
+    schema = StructType(
+        [
+            StructField("id", StringType(), False),
+            StructField("firstname", StringType(), False),
+            StructField("lastname", StringType(), False),
+            StructField("gender", StringType(), False),
+            StructField("picture", StringType(), False),
+        ]
+    )
 
     # Initialize Spark session
-    spark = SparkSession.builder \
-        .master("spark://spark-master:7077") \
-        .appName('MLStreaming') \
-        .config("spark.sql.adaptive.enabled", "false") \
+    spark = (
+        SparkSession.builder.master("spark://spark-master:7077")
+        .appName("MLStreaming")
+        .config("spark.sql.adaptive.enabled", "false")
         .getOrCreate()
+    )
 
     # Set up logging
     spark.sparkContext.setLogLevel("WARN")
 
     # Connect to Kafka with Spark connection
-    df = (spark.readStream
-                .format('kafka')
-                .option('kafka.bootstrap.servers', 'kafka:9092')
-                .option('subscribe', 'usercreated')
-                .option('startingOffsets', 'earliest')
-                .option('failOnDataLoss', 'false')
-                .load())
-    
+    df = (
+        spark.readStream.format("kafka")
+        .option("kafka.bootstrap.servers", "kafka:9092")
+        .option("subscribe", "usercreated")
+        .option("startingOffsets", "earliest")
+        .option("failOnDataLoss", "false")
+        .load()
+    )
 
     # Select and filter data
-    df = (df.selectExpr("CAST(value AS STRING)")
-                .select(from_json(col("value"), schema).alias("data"))
-                .select("data.*"))
+    df = (
+        df.selectExpr("CAST(value AS STRING)")
+        .select(from_json(col("value"), schema).alias("data"))
+        .select("data.*")
+    )
 
-    
-    
     # Apply UDF to the streaming DataFrame
     df = df.withColumn("predicted_gender", predict_gender_udf(df["picture"]))
 
     # Apply the model to predict missing values and update the model with new data
-    query = df.writeStream \
-        .outputMode("append") \
-        .trigger(processingTime="5 seconds") \
-        .option("checkpointLocation", "/tmp/checkpoints") \
-        .format("console") \
+    query = (
+        df.writeStream.outputMode("append")
+        .trigger(processingTime="5 seconds")
+        .option("checkpointLocation", "/tmp/checkpoints")
+        .format("console")
         .start()
+    )
 
     query.awaitTermination()
     spark.stop()

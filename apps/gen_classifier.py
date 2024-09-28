@@ -4,16 +4,13 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input, decode_predictions
+from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from tensorflow.keras import layers
 
 import tf2onnx
-import onnx
-import onnxruntime
 from onnxruntime.transformers import optimizer
 
 from cassandra.cluster import Cluster
-import numpy as np
 import requests
 from io import BytesIO
 
